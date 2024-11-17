@@ -1,0 +1,7 @@
+doclayout_yolo==0.0.2
+torch==2.5.1
+torchvision==0.20.1
+ultralytics==8.3.27
+pymupdf>=1.24.9
+paddlepaddle==2.6.2
+paddleocr==2.9.1

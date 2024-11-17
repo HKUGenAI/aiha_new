@@ -1,0 +1,7 @@
+model: layout_detection_yolo
+model_config:
+  img_size: 1280
+  conf_thres: 0.25
+  iou_thres: 0.45
+  model_path: models/layout/yolo/yolov10l_ft.pt
+  visualize: True

@@ -1,0 +1,10 @@
+__pycache__
+./__pycache__
+*.pyc
+.DS_Store
+
+models/layout/*
+
+results/*
+images/*
+inputs/*
