@@ -8,6 +8,7 @@ import numpy as np
 from tqdm import tqdm
 from utils.visualization import visualize_bbox
 
+
 class LayoutDetectionYOLO:
     def __init__(self, config):
         """
@@ -18,15 +19,15 @@ class LayoutDetectionYOLO:
         """
         # Mapping from class IDs to class names
         self.id_to_names = {
-            0: 'title', 
+            0: 'title',
             1: 'plain text',
-            2: 'abandon', 
-            3: 'figure', 
-            4: 'figure_caption', 
-            5: 'table', 
-            6: 'table_caption', 
-            7: 'table_footnote', 
-            8: 'isolate_formula', 
+            2: 'abandon',
+            3: 'figure',
+            4: 'figure_caption',
+            5: 'table',
+            6: 'table_caption',
+            7: 'table_footnote',
+            8: 'isolate_formula',
             9: 'formula_caption'
         }
 
@@ -45,8 +46,9 @@ class LayoutDetectionYOLO:
         self.visualize = config.get('visualize', False)
         self.nc = config.get('nc', 10)
         self.workers = config.get('workers', 8)
-        self.device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
-        
+        self.device = "cuda" if torch.cuda.is_available() else (
+            "mps" if torch.backends.mps.is_available() else "cpu")
+
         if self.iou_thres > 0:
             import torchvision
             self.nms_func = torchvision.ops.nms
@@ -65,7 +67,8 @@ class LayoutDetectionYOLO:
         """
         results = []
         for idx, image in enumerate(tqdm(images, desc="Predicting layout")):
-            result = self.model.predict(image, imgsz=self.img_size, conf=self.conf_thres, iou=self.iou_thres, verbose=False, device=self.device)[0]
+            result = self.model.predict(image, imgsz=self.img_size, conf=self.conf_thres,
+                                        iou=self.iou_thres, verbose=False, device=self.device)[0]
             if self.visualize:
                 if not os.path.exists(result_path):
                     os.makedirs(result_path)
@@ -74,29 +77,33 @@ class LayoutDetectionYOLO:
                 scores = result.__dict__['boxes'].conf
 
                 if self.iou_thres > 0:
-                    indices = self.nms_func(boxes=torch.Tensor(boxes), scores=torch.Tensor(scores),iou_threshold=self.iou_thres)
+                    indices = self.nms_func(boxes=torch.Tensor(
+                        boxes), scores=torch.Tensor(scores), iou_threshold=self.iou_thres)
                     boxes, scores, classes = boxes[indices], scores[indices], classes[indices]
                     if len(boxes.shape) == 1:
                         boxes = np.expand_dims(boxes, 0)
                         scores = np.expand_dims(scores, 0)
                         classes = np.expand_dims(classes, 0)
-                
-                vis_result = visualize_bbox(image, boxes, classes, scores, self.id_to_names)
+
+                vis_result = visualize_bbox(
+                    image, boxes, classes, scores, self.id_to_names)
 
                 # Determine the base name of the image
                 if image_ids:
                     base_name = image_ids[idx]
                 else:
                     # base_name = os.path.basename(image)
-                    base_name = os.path.splitext(os.path.basename(image))[0]  # Remove file extension
-                
+                    base_name = os.path.splitext(os.path.basename(image))[
+                        0]  # Remove file extension
+
                 result_name = f"{base_name}_layout.png"
-                
-                # Save the visualized result                
+
+                # Save the visualized result
                 cv2.imwrite(os.path.join(result_path, result_name), vis_result)
             results.append(result)
         return results
-    
+
+
 if __name__ == "__main__":
     with open('configs/layout_yolo.yaml') as f:
         config = yaml.safe_load(f)
@@ -113,14 +120,12 @@ if __name__ == "__main__":
         bboxes = result.boxes
         page_shape = result.orig_shape
 
-        text_bboxes = [b for i, b in enumerate(bboxes.data) if bboxes.cls[i] in [0, 1]]
-        
+        text_bboxes = [b for i, b in enumerate(
+            bboxes.data) if bboxes.cls[i] in [0, 1]]
+
         # Sort the bounding boxes based on their layout
-        sorted_bboxes, layout_bbox = sort_with_layout(text_bboxes, page_shape[1], page_shape[0])
-        
+        sorted_bboxes, layout_bbox = sort_with_layout(
+            text_bboxes, page_shape[1], page_shape[0])
+
         print(sorted_bboxes)
         print(layout_bbox)
-    
-    
-
-
