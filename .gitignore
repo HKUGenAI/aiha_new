@@ -3,10 +3,18 @@ __pycache__
 *.pyc
 .DS_Store
 
-.venv/
+venv/
+.idea
+
+chroma
 
 models/layout/*
 
 results/*
 images/*
 inputs/*
+
+.env
+
+.streamlit
+static
