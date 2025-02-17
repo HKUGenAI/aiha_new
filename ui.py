@@ -3,10 +3,12 @@ import streamlit as st
 import chromadb
 from chromadb.utils import embedding_functions
 from chromadb.utils.data_loaders import ImageLoader
+from google_lens import google_lens
 
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 import re
+import os
 import base64
 
 
@@ -17,11 +19,12 @@ data_loader = ImageLoader()
 sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
     model_name="BAAI/bge-m3"
 )
-db_client = chromadb.PersistentClient("chroma")
+db_client = chromadb.PersistentClient(os.getenv("CHROMA_DB_PATH"))
 md_collection = db_client.get_or_create_collection(name="md_data", embedding_function=sentence_transformer_ef)
 
 
 llm = AzureOpenAI()
+google_lens = google_lens()
 
 
 def uploadfile_to_base64(img):
@@ -31,14 +34,16 @@ def uploadfile_to_base64(img):
     return f"data:image/jpeg;base64,{binary}"
 
 def get_image_serach_query(image, text_query):
+    google_lens_results = google_lens.get_image_results(image_byte = image.getvalue(), num_results=10)
+    print(google_lens_results)
     res = llm.chat.completions.create(
         model="trygpt4o",
         messages=[
-            {"role": "system", "content": "You are a image search query generator, you will be helping user generate search query based on the provided image and user query"},
+            {"role": "system", "content": "You are a image search query generator, you will be helping user generate search query based on the provided image, user query and some google lens search results on the image. Include the contex from the google lens search results whe you find this result related to the image, if the image is a person identify the name of the person. **Directly ouput the search query with notion else**."},
             { "role": "user", "content": [  
                 { 
                     "type": "text", 
-                    "text": "Generate a query based on the user query and by describing the image and include text from the image.\n\n User Query: " + text_query
+                    "text": "Generate a query based on the user query and by describing the image and include text from the image.\n\n User Query: " + text_query + "\n\nGoogle Lens Results: " + "\n".join([result['heading'] for result in google_lens_results])
                 },
                 { 
                     "type": "image_url",
